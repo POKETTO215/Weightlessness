@@ -38,7 +38,8 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  pixelDensity(1);
+  // —— 注释掉下一行或删掉它
+  // pixelDensity(1);
   textFont(myFont);
   frameRate(60);
   initLayout();
