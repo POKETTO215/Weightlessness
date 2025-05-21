@@ -9,8 +9,8 @@ let textLines = `
 `.trim().split('\n');
 
 let chars = [];
-let fontSize         = 36;
-let lineSpacing      = 60;
+let fontSize         = 20;
+let lineSpacing      = 30;
 let margin           = 40;            // 屏幕边缘留白
 let charSpacing      = fontSize * 1.0;
 let currentCharIndex = 0;
