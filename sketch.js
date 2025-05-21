@@ -13,7 +13,7 @@ let currentCharIndex = 0;
 let allTextDisplayed = false;
 
 // ———— 运动参数（可调节） ————
-let floatSpeed        = 7;   // 漂浮速度倍率
+let floatSpeed        = 7;    // 漂浮速度倍率
 let floatAmount       = 30;   // 最大偏移幅度
 let returnToHomeSpeed = 0.1;  // 回归插值速度
 
@@ -38,8 +38,7 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  // —— 注释掉下一行或删掉它
-  // pixelDensity(1);
+  //pixelDensity(window.devicePixelRatio); // 恢复高分辨率
   textFont(myFont);
   frameRate(60);
   initLayout();
@@ -54,7 +53,7 @@ function initLayout() {
   chars = [];
   currentCharIndex = 0;
   allTextDisplayed = false;
-  allLockedTimer = 0;
+  allLockedTimer   = 0;
 
   // —— 动态计算字号、行距、初始字距 ——
   let baseSize    = min(windowWidth, windowHeight) / 40;
@@ -69,15 +68,14 @@ function initLayout() {
   // —— 响应式边距 ——
   let marginX = width * 0.10;
   let marginY = height * 0.10;
-  let availW   = width - marginX * 2;
-  let availH   = height - marginY * 2;
+  let availW  = width - marginX * 2;
+  let availH  = height - marginY * 2;
 
   // —— 计算换行及垂直居中起始 Y ——
   let temp = [];
   let x = marginX;
   let displayLine = 0;
 
-  // 按字符布局并自动换行
   for (let line of textLines) {
     for (let ch of line) {
       if (ch === ' ' || ch === '\u3000') {
@@ -97,14 +95,11 @@ function initLayout() {
 
   totalLines = displayLine;
   let blockHeight = totalLines * lineSpacing;
-  // 垂直居中起点
-  let startY = marginY + (availH - blockHeight) / 2 + (fontSize / 2);
+  let startY = marginY + (availH - blockHeight) / 2 + fontSize / 2;
 
   // 初始化锁定状态
-  for (let i = 0; i < totalLines; i++) {
-    lineLockTimers[i] = 0;
-    lineLocked[i]     = false;
-  }
+  lineLockTimers = Array(totalLines).fill(0);
+  lineLocked     = Array(totalLines).fill(false);
 
   // 构建 chars 数组
   for (let obj of temp) {
@@ -112,14 +107,11 @@ function initLayout() {
     let y0 = startY + obj.line * lineSpacing;
     chars.push({
       char: obj.char,
-      homeX: x0,
-      homeY: y0,
-      x: x0,
-      y: y0,
+      homeX: x0, homeY: y0,
+      x: x0, y: y0,
       line: obj.line,
       isVisible: false,
-      floatOffsetX: 0,
-      floatOffsetY: 0,
+      floatOffsetX: 0, floatOffsetY: 0,
       floatSpeedX: random(-0.1, 0.1),
       floatSpeedY: random(-0.1, 0.1),
       isLocked: false
@@ -132,6 +124,7 @@ function draw() {
   detectHoveredLine();
   updateLockTimers();
 
+  // 渐进展示文字
   if (!allTextDisplayed) {
     chars[currentCharIndex].isVisible = true;
     currentCharIndex = min(currentCharIndex + 1, chars.length);
@@ -140,18 +133,19 @@ function draw() {
     allLockedTimer = millis();
   }
 
-  // 漂浮及回归
+  // 漂浮 & 回归
   for (let c of chars) {
     if (!c.isVisible) continue;
     if (c.isLocked) {
-      c.x = c.homeX;
-      c.y = c.homeY;
-    } else if (hoveredLine === c.line) {
+      c.x = c.homeX; c.y = c.homeY;
+    } else if (hoveredLine === c.line || touchedLine === c.line) {
+      // 鼠标或长按行：平滑回归
       c.floatOffsetX = lerp(c.floatOffsetX, 0, returnToHomeSpeed);
       c.floatOffsetY = lerp(c.floatOffsetY, 0, returnToHomeSpeed);
       c.x = c.homeX + c.floatOffsetX;
       c.y = c.homeY + c.floatOffsetY;
     } else {
+      // 自由漂浮
       c.floatOffsetX += c.floatSpeedX * floatSpeed;
       c.floatOffsetY += c.floatSpeedY * floatSpeed;
       if (abs(c.floatOffsetX) > floatAmount) c.floatSpeedX *= -1;
@@ -161,22 +155,12 @@ function draw() {
     }
   }
 
-  // 全部重置
+  // 全局重置：清除行锁 & 字符 isLocked
   if (allTextDisplayed && millis() - allLockedTimer > RESET_DELAY) {
-    for (let i = 0; i < totalLines; i++) {
-      lineLocked[i] = false;
-      lineLockTimers[i] = 0;
-    }
-    chars.forEach(c => {
-      if (!c.isLocked) {
-        c.floatSpeedX = random(-0.1, 0.1);
-        c.floatSpeedY = random(-0.1, 0.1);
-      }
-    });
-    allLockedTimer = millis();
+    resetAllLines();
   }
 
-  // 绘制文本
+  // 绘制字符
   fill(255);
   noStroke();
   for (let c of chars) {
@@ -189,11 +173,11 @@ function detectHoveredLine() {
   if (!allTextDisplayed) return;
   let marginY = height * 0.10;
   let availH  = height - marginY * 2;
-  let lineSpacing = textLeading();
-  let halfH = textAscent() / 2;
-  let startY = marginY + (availH - totalLines * lineSpacing) / 2 + textSize() / 2;
+  let ls      = textLeading();
+  let halfH   = textAscent() / 2;
+  let startY  = marginY + (availH - totalLines * ls) / 2 + textSize() / 2;
   for (let i = 0; i < totalLines; i++) {
-    let y = startY + i * lineSpacing;
+    let y = startY + i * ls;
     if (mouseY > y - halfH && mouseY < y + halfH) {
       hoveredLine = i;
       break;
@@ -203,14 +187,20 @@ function detectHoveredLine() {
 
 function updateLockTimers() {
   if (!allTextDisplayed) return;
-  if (hoveredLine >= 0 && !lineLocked[hoveredLine]) {
-    lineLockTimers[hoveredLine] += deltaTime;
-    if (lineLockTimers[hoveredLine] > LOCK_DELAY) {
-      lockLine(hoveredLine);
+
+  // 鼠标 hover 或 触摸长按
+  let activeLine = hoveredLine;
+  if (touchedLine >= 0) activeLine = touchedLine;
+
+  if (activeLine >= 0 && !lineLocked[activeLine]) {
+    lineLockTimers[activeLine] += deltaTime;
+    if (lineLockTimers[activeLine] > LOCK_DELAY) {
+      lockLine(activeLine);
     }
   } else {
+    // 重置其他行计时
     for (let i = 0; i < lineLockTimers.length; i++) {
-      if (i !== hoveredLine && !lineLocked[i]) lineLockTimers[i] = 0;
+      if (i !== activeLine && !lineLocked[i]) lineLockTimers[i] = 0;
     }
   }
 }
@@ -222,8 +212,32 @@ function lockLine(line) {
   });
 }
 
+function resetAllLines() {
+  // 解锁所有行
+  for (let i = 0; i < totalLines; i++) {
+    lineLocked[i]     = false;
+    lineLockTimers[i] = 0;
+  }
+  // 解锁所有字符并重置漂浮参数
+  chars.forEach(c => {
+    c.isLocked       = false;
+    c.floatOffsetX   = 0;
+    c.floatOffsetY   = 0;
+    c.floatSpeedX    = random(-0.1, 0.1);
+    c.floatSpeedY    = random(-0.1, 0.1);
+  });
+  allLockedTimer = millis();
+}
+
 function touchStarted() {
   detectHoveredLine();
-  lockLine(hoveredLine);
+  touchedLine    = hoveredLine;
+  touchStartTime = millis();
+  return false; // 防止页面滚动
+}
+
+function touchEnded() {
+  touchedLine    = -1;
+  touchStartTime = 0;
   return false;
 }
