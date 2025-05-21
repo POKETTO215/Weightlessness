@@ -10,6 +10,6 @@
 deploy/
   ├── index.html    # 入口页面
   ├── sketch.js     # p5.js 逻辑脚本
-  ├── SmileySans-Optimized.ttf  # 自定义字体文件
+  ├── JianHeSans-Optimized(1).ttf  # 自定义字体文件
   └── README.md     # 部署说明
 ```
