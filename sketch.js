@@ -13,8 +13,8 @@ let currentCharIndex = 0;
 let allTextDisplayed = false;
 
 // ———— 运动参数（可调节） ————
-let floatSpeed        = 15;   // 漂浮速度倍率
-let floatAmount       = 25;   // 最大偏移幅度
+let floatSpeed        = 7;   // 漂浮速度倍率
+let floatAmount       = 30;   // 最大偏移幅度
 let returnToHomeSpeed = 0.1;  // 回归插值速度
 
 let LOCK_DELAY  = 800;
