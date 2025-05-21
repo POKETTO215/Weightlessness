@@ -33,7 +33,7 @@ let totalLines = 0;
 let myFont;
 
 function preload() {
-  myFont = loadFont('JianHeSans-Optimized(1).ttf');
+  myFont = loadFont('JianHeSans-Optimized.ttf');
 }
 
 function setup() {
@@ -97,7 +97,7 @@ function initLayout() {
   totalLines = displayLine;
   let blockHeight = totalLines * lineSpacing;
   // 垂直居中起点
-  let startY = marginY + (availH - blockHeight) / 2 + fontSize / 2;
+  let startY = marginY + (availH - blockHeight) / 2 + (fontSize / 2);
 
   // 初始化锁定状态
   for (let i = 0; i < totalLines; i++) {
