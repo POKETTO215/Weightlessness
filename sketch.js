@@ -26,9 +26,9 @@ let touchStartTime = 0;
 
 let lineLockTimers = [];
 let lineLocked     = [];
-let allLockedTimer = 0;
+let totalLines     = 0;
 
-let totalLines = 0;
+let lockAllTime = 0;  // 所有行锁定后的时间戳
 
 let myFont;
 
@@ -38,7 +38,6 @@ function preload() {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  //pixelDensity(window.devicePixelRatio); // 恢复高分辨率
   textFont(myFont);
   frameRate(60);
   initLayout();
@@ -53,12 +52,12 @@ function initLayout() {
   chars = [];
   currentCharIndex = 0;
   allTextDisplayed = false;
-  allLockedTimer   = 0;
+  lockAllTime = 0;
 
   // —— 动态计算字号、行距、初始字距 ——
   let baseSize    = min(windowWidth, windowHeight) / 40;
-  let fontSize    = max(20, baseSize);
-  let lineSpacing = fontSize * 1.2;
+  let fontSize    = max(15, baseSize);
+  let lineSpacing = fontSize * 1.5;
   let charSpacing = fontSize * 1.2;
 
   textSize(fontSize);
@@ -97,18 +96,16 @@ function initLayout() {
   let blockHeight = totalLines * lineSpacing;
   let startY = marginY + (availH - blockHeight) / 2 + fontSize / 2;
 
-  // 初始化锁定状态
   lineLockTimers = Array(totalLines).fill(0);
   lineLocked     = Array(totalLines).fill(false);
 
-  // 构建 chars 数组
   for (let obj of temp) {
     let x0 = obj.xOff;
     let y0 = startY + obj.line * lineSpacing;
     chars.push({
       char: obj.char,
       homeX: x0, homeY: y0,
-      x: x0, y: y0,
+      x: x0,      y: y0,
       line: obj.line,
       isVisible: false,
       floatOffsetX: 0, floatOffsetY: 0,
@@ -124,13 +121,11 @@ function draw() {
   detectHoveredLine();
   updateLockTimers();
 
-  // 渐进展示文字
+  // 按序显现文字
   if (!allTextDisplayed) {
     chars[currentCharIndex].isVisible = true;
     currentCharIndex = min(currentCharIndex + 1, chars.length);
     if (currentCharIndex === chars.length) allTextDisplayed = true;
-  } else if (allLockedTimer === 0) {
-    allLockedTimer = millis();
   }
 
   // 漂浮 & 回归
@@ -139,7 +134,7 @@ function draw() {
     if (c.isLocked) {
       c.x = c.homeX; c.y = c.homeY;
     } else if (hoveredLine === c.line || touchedLine === c.line) {
-      // 鼠标或长按行：平滑回归
+      // 悬停或长按行：回归原位
       c.floatOffsetX = lerp(c.floatOffsetX, 0, returnToHomeSpeed);
       c.floatOffsetY = lerp(c.floatOffsetY, 0, returnToHomeSpeed);
       c.x = c.homeX + c.floatOffsetX;
@@ -155,9 +150,13 @@ function draw() {
     }
   }
 
-  // 全局重置：清除行锁 & 字符 isLocked
-  if (allTextDisplayed && millis() - allLockedTimer > RESET_DELAY) {
+  // 如果所有行都锁定，开始计时，5 秒后重置
+  if (allTextDisplayed && lockAllTime === 0 && lineLocked.every(l => l)) {
+    lockAllTime = millis();
+  }
+  if (lockAllTime > 0 && millis() - lockAllTime > RESET_DELAY) {
     resetAllLines();
+    lockAllTime = 0;
   }
 
   // 绘制字符
@@ -187,53 +186,43 @@ function detectHoveredLine() {
 
 function updateLockTimers() {
   if (!allTextDisplayed) return;
-
-  // 鼠标 hover 或 触摸长按
-  let activeLine = hoveredLine;
-  if (touchedLine >= 0) activeLine = touchedLine;
-
-  if (activeLine >= 0 && !lineLocked[activeLine]) {
-    lineLockTimers[activeLine] += deltaTime;
-    if (lineLockTimers[activeLine] > LOCK_DELAY) {
-      lockLine(activeLine);
-    }
+  let active = hoveredLine;
+  if (touchedLine >= 0) active = touchedLine;
+  if (active >= 0 && !lineLocked[active]) {
+    lineLockTimers[active] += deltaTime;
+    if (lineLockTimers[active] > LOCK_DELAY) lockLine(active);
   } else {
-    // 重置其他行计时
     for (let i = 0; i < lineLockTimers.length; i++) {
-      if (i !== activeLine && !lineLocked[i]) lineLockTimers[i] = 0;
+      if (i !== active && !lineLocked[i]) lineLockTimers[i] = 0;
     }
   }
 }
 
 function lockLine(line) {
   lineLocked[line] = true;
-  chars.forEach(c => {
-    if (c.line === line) c.isLocked = true;
-  });
+  chars.forEach(c => { if (c.line === line) c.isLocked = true; });
 }
 
 function resetAllLines() {
-  // 解锁所有行
+  // 解锁行和字符
   for (let i = 0; i < totalLines; i++) {
     lineLocked[i]     = false;
     lineLockTimers[i] = 0;
   }
-  // 解锁所有字符并重置漂浮参数
   chars.forEach(c => {
-    c.isLocked       = false;
-    c.floatOffsetX   = 0;
-    c.floatOffsetY   = 0;
-    c.floatSpeedX    = random(-0.1, 0.1);
-    c.floatSpeedY    = random(-0.1, 0.1);
+    c.isLocked     = false;
+    c.floatOffsetX = 0;
+    c.floatOffsetY = 0;
+    c.floatSpeedX  = random(-0.1, 0.1);
+    c.floatSpeedY  = random(-0.1, 0.1);
   });
-  allLockedTimer = millis();
 }
 
 function touchStarted() {
   detectHoveredLine();
   touchedLine    = hoveredLine;
   touchStartTime = millis();
-  return false; // 防止页面滚动
+  return false;
 }
 
 function touchEnded() {
