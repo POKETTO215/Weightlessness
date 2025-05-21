@@ -18,7 +18,7 @@ let floatAmount       = 30;   // 最大偏移幅度
 let returnToHomeSpeed = 0.1;  // 回归插值速度
 
 let LOCK_DELAY  = 800;
-let RESET_DELAY = 10000;
+let RESET_DELAY = 5000;
 
 let hoveredLine    = -1;
 let touchedLine    = -1;
