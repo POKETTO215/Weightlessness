@@ -33,7 +33,7 @@ let totalLines = 0;
 let myFont;
 
 function preload() {
-  myFont = loadFont('SmileySans-Optimized.ttf');
+  myFont = loadFont('JianHeSans-Optimized(1).ttf');
 }
 
 function setup() {
