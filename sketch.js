@@ -32,8 +32,17 @@ let lockAllTime = 0;  // 所有行锁定后的时间戳
 
 let myFont;
 
+// ========== 音乐相关 ==========
+let bgMusic;
+let musicFading = false;
+let fadeTarget = 1;
+let fadeStartTime = 0;
+const FADE_DURATION = 2000; // 2秒淡入淡出
+// =============================
+
 function preload() {
   myFont = loadFont('JianHeSans-Optimized.ttf');
+  bgMusic = loadSound('Harbours & Oceans - Lakes.mp3');
 }
 
 function setup() {
@@ -41,6 +50,11 @@ function setup() {
   textFont(myFont);
   frameRate(60);
   initLayout();
+  // 自动尝试播放
+  if (bgMusic && !bgMusic.isPlaying()) {
+    bgMusic.setVolume(1, 0);
+    bgMusic.loop();
+  }
 }
 
 function windowResized() {
@@ -134,13 +148,11 @@ function draw() {
     if (c.isLocked) {
       c.x = c.homeX; c.y = c.homeY;
     } else if (hoveredLine === c.line || touchedLine === c.line) {
-      // 悬停或长按行：回归原位
       c.floatOffsetX = lerp(c.floatOffsetX, 0, returnToHomeSpeed);
       c.floatOffsetY = lerp(c.floatOffsetY, 0, returnToHomeSpeed);
       c.x = c.homeX + c.floatOffsetX;
       c.y = c.homeY + c.floatOffsetY;
     } else {
-      // 自由漂浮
       c.floatOffsetX += c.floatSpeedX * floatSpeed;
       c.floatOffsetY += c.floatSpeedY * floatSpeed;
       if (abs(c.floatOffsetX) > floatAmount) c.floatSpeedX *= -1;
@@ -153,6 +165,12 @@ function draw() {
   // 如果所有行都锁定，开始计时，5 秒后重置
   if (allTextDisplayed && lockAllTime === 0 && lineLocked.every(l => l)) {
     lockAllTime = millis();
+    // ========== 触发音乐淡出 ==========
+    if (bgMusic && bgMusic.isPlaying() && !musicFading && bgMusic.getVolume() > 0.05) {
+      musicFading = true;
+      fadeTarget = 0;
+      fadeStartTime = millis();
+    }
   }
   if (lockAllTime > 0 && millis() - lockAllTime > RESET_DELAY) {
     resetAllLines();
@@ -165,7 +183,25 @@ function draw() {
   for (let c of chars) {
     if (c.isVisible) text(c.char, c.x, c.y);
   }
-}
+
+  // ========== 音乐淡入淡出动画 ==========
+  if (musicFading && bgMusic) {
+    let now = millis();
+    let t = constrain((now - fadeStartTime) / FADE_DURATION, 0, 1);
+    let from = bgMusic.getVolume();
+    let to = fadeTarget;
+    let newVol = lerp(from, to, t);
+    bgMusic.setVolume(newVol, 0.1);
+    if (t >= 1 || abs(newVol - fadeTarget) < 0.02) {
+      bgMusic.setVolume(fadeTarget, 0);
+      musicFading = false;
+      if (fadeTarget === 0 && bgMusic.isPlaying()) {
+        bgMusic.pause();
+      }
+      // 完全淡入无需操作
+    }
+  }
+
 
 function detectHoveredLine() {
   hoveredLine = -1;
@@ -216,12 +252,29 @@ function resetAllLines() {
     c.floatSpeedX  = random(-0.1, 0.1);
     c.floatSpeedY  = random(-0.1, 0.1);
   });
+
+  // ========= 文字解锁，音乐淡入 =========
+  if (bgMusic && !bgMusic.isPlaying()) {
+    bgMusic.loop();
+    bgMusic.setVolume(0, 0);
+  }
+  if (bgMusic && (!musicFading || fadeTarget === 0)) {
+    musicFading = true;
+    fadeTarget = 1;
+    fadeStartTime = millis();
+  }
 }
 
 function touchStarted() {
+  if (typeof userStartAudio === "function") userStartAudio();
   detectHoveredLine();
   touchedLine    = hoveredLine;
   touchStartTime = millis();
+  // 触摸播放音乐（兼容iOS自动播放限制）
+  if (bgMusic && !bgMusic.isPlaying()) {
+    bgMusic.setVolume(1, 0.3);
+    bgMusic.loop();
+  }
   return false;
 }
 
