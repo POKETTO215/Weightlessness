@@ -38,8 +38,9 @@ let myFont;
 function preload() {
   myFont = loadFont('JianHeSans-Optimized.ttf');
   soundFormats('mp3', 'ogg');
-  bgm = loadSound('music.mp3');
+  bgm = loadSound('Harbours & Oceans - Lakes.mp3'); // 用你的音乐文件名
 }
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   textFont(myFont);
@@ -233,23 +234,22 @@ function touchStarted() {
 function touchEnded() {
   touchedLine    = -1;
 
-  function mousePressed() {
+function mousePressed() {
   if (!musicStarted && bgm && bgm.isLoaded()) {
     bgm.loop();
     musicStarted = true;
+    // console.log("music start by mouse");
   }
 }
+
 function touchStarted() {
   if (!musicStarted && bgm && bgm.isLoaded()) {
     bgm.loop();
     musicStarted = true;
+    // console.log("music start by touch");
   }
   detectHoveredLine();
   touchedLine    = hoveredLine;
   touchStartTime = millis();
-  return false;
-}
-
-  touchStartTime = 0;
   return false;
 }
