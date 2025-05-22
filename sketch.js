@@ -1,5 +1,3 @@
-let bgm;
-let musicStarted = false;
 
 // ———— 全局参数配置 ————
 let textLines = `
@@ -37,8 +35,6 @@ let myFont;
 
 function preload() {
   myFont = loadFont('JianHeSans-Optimized.ttf');
-  soundFormats('mp3', 'ogg');
-  bgm = loadSound('Harbours & Oceans - Lakes.mp3'); // 用你的音乐文件名
 }
 
 function setup() {
@@ -47,7 +43,6 @@ function setup() {
   frameRate(60);
   initLayout();
 }
-
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
@@ -233,23 +228,6 @@ function touchStarted() {
 
 function touchEnded() {
   touchedLine    = -1;
-
-function mousePressed() {
-  if (!musicStarted && bgm && bgm.isLoaded()) {
-    bgm.loop();
-    musicStarted = true;
-    // console.log("music start by mouse");
-  }
-}
-
-function touchStarted() {
-  if (!musicStarted && bgm && bgm.isLoaded()) {
-    bgm.loop();
-    musicStarted = true;
-    // console.log("music start by touch");
-  }
-  detectHoveredLine();
-  touchedLine    = hoveredLine;
-  touchStartTime = millis();
+  touchStartTime = 0;
   return false;
 }
