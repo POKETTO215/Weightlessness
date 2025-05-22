@@ -38,7 +38,7 @@ let myFont;
 function preload() {
   myFont = loadFont('JianHeSans-Optimized.ttf');
   soundFormats('mp3', 'ogg');
-  bgm = loadSound('music.mp3');
+  bgm = loadSound('Harbours & Oceans - Lakes.mp3');
 }
 function setup() {
   createCanvas(windowWidth, windowHeight);
