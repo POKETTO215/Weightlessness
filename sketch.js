@@ -1,3 +1,6 @@
+let bgm;
+let musicStarted = false;
+
 // ———— 全局参数配置 ————
 let textLines = `
 文字从页面中缓缓浮现，漂浮起来。
@@ -34,14 +37,16 @@ let myFont;
 
 function preload() {
   myFont = loadFont('JianHeSans-Optimized.ttf');
+  soundFormats('mp3', 'ogg');
+  bgm = loadSound('music.mp3');
 }
-
 function setup() {
   createCanvas(windowWidth, windowHeight);
   textFont(myFont);
   frameRate(60);
   initLayout();
 }
+
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
@@ -227,6 +232,24 @@ function touchStarted() {
 
 function touchEnded() {
   touchedLine    = -1;
+
+  function mousePressed() {
+  if (!musicStarted && bgm && bgm.isLoaded()) {
+    bgm.loop();
+    musicStarted = true;
+  }
+}
+function touchStarted() {
+  if (!musicStarted && bgm && bgm.isLoaded()) {
+    bgm.loop();
+    musicStarted = true;
+  }
+  detectHoveredLine();
+  touchedLine    = hoveredLine;
+  touchStartTime = millis();
+  return false;
+}
+
   touchStartTime = 0;
   return false;
 }
